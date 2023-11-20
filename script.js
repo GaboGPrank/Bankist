@@ -4,6 +4,11 @@
 /////////////////////////////////////////////////
 // BANKIST APP
 
+/////////////////////////////////////////////////
+// Data
+
+// DIFFERENT DATA! Contains movement dates, currency and locale
+
 const account1 = {
   owner: 'Jonas Schmedtmann',
   movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
@@ -171,14 +176,32 @@ const updateUI = function (acc) {
   calcDisplaySummary(acc);
 };
 
+const LOG_OUT_TIME = 300;
+function startLogOut(){
+  const tick = () => {
+    const min = String(Math.trunc(time / 60)).padStart(2,'0');
+    const sec = String(time % 60).padStart(2, '0');
+
+    labelTimer.textContent = `${min}:${sec}`;
+    
+    if (time <= 0){
+      clearInterval(logOut);
+      labelWelcome.textContent = 'Log in to get started';
+      containerApp.style.opacity = 0;
+    }
+    
+    --time;
+  }
+  let time = LOG_OUT_TIME;
+
+  tick();
+  const logOut = setInterval(tick, 1000);
+  return logOut;
+}
+
 ///////////////////////////////////////
 // Event handlers
-let currentAccount;
-
-//Fake allways login
-currentAccount = account1;
-updateUI(currentAccount);
-containerApp.style.opacity = 100;
+let currentAccount, timer;
 
 btnLogin.addEventListener('click', function (e) {
   // Prevent form from submitting
@@ -212,6 +235,10 @@ btnLogin.addEventListener('click', function (e) {
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
 
+    if (timer) clearInterval(timer);
+    //Starts log out process
+    timer = startLogOut();
+
     // Update UI
     updateUI(currentAccount);
   }
@@ -241,6 +268,9 @@ btnTransfer.addEventListener('click', function (e) {
     // Update UI
     updateUI(currentAccount);
   }
+
+  clearInterval(timer);
+  timer = startLogOut();
 });
 
 btnLoan.addEventListener('click', function (e) {
@@ -249,14 +279,19 @@ btnLoan.addEventListener('click', function (e) {
   const amount = Math.floor(Number(inputLoanAmount.value));
 
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    // Add movement
-    currentAccount.movements.push(amount);
-    currentAccount.movementsDates.push(new Date().toISOString());
 
-    // Update UI
-    updateUI(currentAccount);
+    setTimeout(() => {
+        // Add movement
+      currentAccount.movements.push(amount);
+      currentAccount.movementsDates.push(new Date().toISOString());
+
+      // Update UI
+      updateUI(currentAccount);
+    }, 2500);
   }
   inputLoanAmount.value = '';
+  clearInterval(timer);
+  timer = startLogOut();
 });
 
 btnClose.addEventListener('click', function (e) {
@@ -285,7 +320,7 @@ btnClose.addEventListener('click', function (e) {
 let sorted = false;
 btnSort.addEventListener('click', function (e) {
   e.preventDefault();
-  displayMovements(currentAccount.movements, !sorted);
+  displayMovements(currentAccount, !sorted);
   sorted = !sorted;
 });
 
